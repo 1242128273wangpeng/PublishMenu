@@ -23,7 +23,6 @@ class PublishMenu @JvmOverloads constructor(
         context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 ) : FrameLayout(context, attrs, defStyleAttr) {
 
-
     var normalItemList: MutableList<PublishMenuNormalItem> = mutableListOf()
     var smallItemList: MutableList<PublishMenuSmallItem> = mutableListOf()
     var paint: Paint? = null
@@ -43,10 +42,11 @@ class PublishMenu @JvmOverloads constructor(
     var mCenterPoint: Point? = null
     var mSmallRadius: Float
     var mNormalRadius: Float
-    var isFrameOrInnerPosition: Boolean = false
     var smallDrawables: IntArray = intArrayOf()
     var normalDrawables: IntArray = intArrayOf()
+    // 发布菜单默认是打开小的还是大的
     var openSmallOrNormal: Boolean = false
+    var mOnIconClickListener: OnIconClickListener? = null
 
     init {
         setWillNotDraw(false)
@@ -97,24 +97,37 @@ class PublishMenu @JvmOverloads constructor(
         for (i in normalItemList.indices) {
             var normalItem: PublishMenuNormalItem = normalItemList.get(i)
             var frameLayout: FrameLayout.LayoutParams = FrameLayout.LayoutParams(normalItem.width, normalItem.height, Gravity.TOP or Gravity.LEFT)
+            val spec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+            normalItem.nameText?.measure(spec, spec)
+            var textWidth: Int = normalItem.nameText?.measuredWidth!!
+            var textHeight: Int = normalItem.nameText?.measuredHeight!!
+            var txtFrameLayout: FrameLayout.LayoutParams = FrameLayout.LayoutParams(textWidth, textHeight, Gravity.TOP or Gravity.LEFT)
             if (normalNeedShow) {
+                txtFrameLayout.setMargins(normalItem.x - textWidth / 2, normalItem.y + normalItem.height / 2 - textHeight * 2 / 3, 0, 0)
                 frameLayout.setMargins(normalItem.x - normalItem.width / 2, normalItem.y - normalItem.height / 2, 0, 0)
                 normalItem.alpha = 1.0f
-                normalItem?.iconImg?.alpha = 1.0f
+                normalItem.iconImg?.alpha = 1.0f
+                normalItem.nameText?.alpha = 1.0f
             } else {
                 frameLayout.setMargins((mWidth.toInt() - normalItem.width) / 2, (mHeight.toInt() - normalItem.height) / 2, 0, 0)
             }
-            if (normalItem?.iconImg?.parent != null) {
-                var viewGroup: ViewGroup = normalItem?.iconImg?.parent as ViewGroup
-                viewGroup?.removeView(normalItem.iconImg)
+            if (normalItem.iconImg?.parent != null) {
+                var viewGroup: ViewGroup = normalItem.iconImg?.parent as ViewGroup
+                viewGroup.removeView(normalItem.iconImg)
             }
-            addViewToCurrentContainer(normalItem?.iconImg as View, frameLayout)
+            if (i == 3) {  // 视频聊天的位置多添加一个ImageView
+                var bak: ImageView = ImageView(context)
+                bak.setImageResource(R.drawable.fadan_shipinliaotian)
+                addViewToCurrentContainer(bak, frameLayout)
+            }
+            addViewToCurrentContainer(normalItem.iconImg as View, frameLayout)
+            addViewToCurrentContainer(normalItem.nameText as View, txtFrameLayout)
         }
     }
 
     private fun initCenterPosition() {
         // 为了调试画弧线
-        mCenterPoint = calculateItemPositions(isFrameOrInnerPosition)
+        mCenterPoint = calculateItemPositions()
         mNormalRectF = RectF((mWidth / 2 - mNormalRadius), (mHeight / 2 - mNormalRadius), (mWidth / 2 + mNormalRadius), (mHeight / 2 + mNormalRadius))
         mSmallRectF = RectF((mWidth / 2 - mSmallRadius), (mHeight / 2 - mSmallRadius), (mWidth / 2 + mSmallRadius), (mHeight / 2 + mSmallRadius))
         mNormalPath?.addArc(mNormalRectF, mNormalStartAngle, Math.abs((mNormalEndAngle - mNormalStartAngle)))
@@ -123,7 +136,7 @@ class PublishMenu @JvmOverloads constructor(
     }
 
     private fun initItemList() {
-        for (normal_i in 0 until 6) {
+        for (normal_i in normalDrawables.indices) {
             var item: PublishMenuNormalItem = PublishMenuNormalItem(0, 0)
             item.iconImg = ImageView(context)
             item.iconImg?.alpha = 0.0f
@@ -132,9 +145,10 @@ class PublishMenu @JvmOverloads constructor(
             item.nameText = TextView(context)
             item.nameText?.alpha = 0.0f
             item.nameText?.text = "啊啊啊"
+            item.nameText?.textSize = 13.0f
             normalItemList.add(item)
         }
-        for (small_i in 0 until 6) {
+        for (small_i in smallDrawables.indices) {
             var item: PublishMenuSmallItem = PublishMenuSmallItem(0, 0)
             item.iconImg = ImageView(context)
             item.iconImg?.alpha = 0.0f
@@ -202,6 +216,15 @@ class PublishMenu @JvmOverloads constructor(
             addViewToCurrentContainer(normalItem.nameText)
             if (normalItem.width == 0 || normalItem.height == 0) {
                 if (normalItem.iconImg?.isAttachedToWindow!!) {
+                    normalItem?.iconImg?.setTag(i)
+                    normalItem?.iconImg?.id = i
+                    normalItem?.iconImg?.setOnClickListener(object : View.OnClickListener {
+                        override fun onClick(v: View?) {
+                            if (mOnIconClickListener != null) {
+                                mOnIconClickListener?.onClick(normalItem?.iconImg!!)
+                            }
+                        }
+                    })
                     normalItem.iconImg?.post(ItemViewQueueListener(normalItem))
                 } else {
                     Log.i("init", "initNormal not attach")
@@ -278,22 +301,17 @@ class PublishMenu @JvmOverloads constructor(
         mHeight = measuredHeight.toFloat()
     }
 
-    fun calculateItemPositions(isFramePositionBoolean: Boolean): Point {
+    fun calculateItemPositions(): Point {
         var x: Int = 0
         var y: Int = 0
-        if (isFramePositionBoolean) {
-            val coords = IntArray(2)
-            this.getLocationOnScreen(coords)
-            Log.i("calculateItemPositions", "coords[0]:" + coords[0] + "  coords[1]:" + coords[1])
-            Log.i("calculateItemPositions", "measuredWidth:" + this.measuredWidth + "  measuredHeight:" + this.measuredHeight)
-            x = coords[0] + measuredWidth / 2
-            y = coords[1] + measuredHeight / 2
-        } else {
-            x = measuredWidth / 2
-            y = measuredHeight / 2
-        }
+        x = measuredWidth / 2
+        y = measuredHeight / 2
         Log.i("calculateItemPositions", "x:" + x + "  y:" + y)
         return Point(x, y)
+    }
+
+    interface OnIconClickListener {
+        fun onClick(view: View)
     }
 
 }

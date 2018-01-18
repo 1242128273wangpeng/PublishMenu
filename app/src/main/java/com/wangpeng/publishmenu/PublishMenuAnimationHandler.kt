@@ -8,9 +8,8 @@ import com.wangpeng.publishmenu.item.PublishMenuSmallItem
 import android.animation.PropertyValuesHolder
 import android.util.Log
 import android.view.View
-import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.AccelerateInterpolator
-import android.view.animation.DecelerateInterpolator
+import android.view.animation.AlphaAnimation
 import android.view.animation.OvershootInterpolator
 
 
@@ -48,8 +47,15 @@ class PublishMenuAnimationHandler {
                         for (normal_index in publishMenu.normalItemList.indices) {
                             Log.i("smallInNormalOut", "normal_index:" + normal_index)
                             var normalItem: PublishMenuNormalItem = publishMenu.normalItemList.get(normal_index)
-                            val pvhX = PropertyValuesHolder.ofFloat(View.TRANSLATION_X, (normalItem.x - publishMenu?.mCenterPoint?.x!!).toFloat())
-                            val pvhY = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, (normalItem.y - publishMenu?.mCenterPoint?.x!!).toFloat())
+                            var pvhX: PropertyValuesHolder? = null
+                            var pvhY: PropertyValuesHolder? = null
+                            if (publishMenu.openSmallOrNormal) {
+                                pvhX = PropertyValuesHolder.ofFloat(View.TRANSLATION_X, (normalItem.x - publishMenu?.mCenterPoint?.x!!).toFloat())
+                                pvhY = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, (normalItem.y - publishMenu?.mCenterPoint?.y!!).toFloat())
+                            } else {
+                                pvhX = PropertyValuesHolder.ofFloat(View.TRANSLATION_X, 0.0f)
+                                pvhY = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, 0.0f)
+                            }
                             Log.i("smallInNormalOut", "  publishMenu?.mCenterPoint?.x:" + publishMenu?.mCenterPoint?.x + "   publishMenu?.mCenterPoint?.y" + publishMenu?.mCenterPoint?.y)
                             val pvhR = PropertyValuesHolder.ofFloat(View.ROTATION, 720.0f)
                             val pvhsX = PropertyValuesHolder.ofFloat(View.SCALE_X, 1.0f)
@@ -63,6 +69,11 @@ class PublishMenuAnimationHandler {
                                 override fun onAnimationEnd(animation: Animator?) {
                                     if (normal_index == publishMenu.normalItemList.size - 1) {
                                         Log.i("smallInNormalOut", "normalOut ${normal_index}")
+                                        var mAlpha: AlphaAnimation = AlphaAnimation(0.0f, 1.0f)
+                                        mAlpha.interpolator = AccelerateInterpolator()
+                                        mAlpha.duration = 150
+                                        normalItem.nameText?.animation = mAlpha
+                                        normalItem.nameText?.startAnimation(mAlpha)
                                     }
                                 }
                             })
@@ -88,15 +99,29 @@ class PublishMenuAnimationHandler {
             animation.interpolator = AccelerateInterpolator(1.5f)
             animation.start()
             animation.addListener(object : CustomAnimatorListener() {
+                override fun onAnimationStart(animation: Animator?) {
+                    var mAlpha: AlphaAnimation = AlphaAnimation(1.0f, 0.0f)
+                    mAlpha.interpolator = AccelerateInterpolator()
+                    mAlpha.duration = 150
+                    normalItem.nameText?.animation = mAlpha
+                    normalItem.nameText?.startAnimation(mAlpha)
+                }
+
                 override fun onAnimationEnd(animation: Animator?) {
                     if (normal_index == publishMenu.normalItemList.size - 1) {
                         Log.i("normalInSmallOut", "normalOut ${normal_index}")
                         for (small_index in publishMenu.smallItemList.indices) {
                             Log.i("normalInSmallOut", "small_index:" + small_index)
                             var smallItem: PublishMenuSmallItem = publishMenu.smallItemList.get(small_index)
-                            val pvhX = PropertyValuesHolder.ofFloat(View.TRANSLATION_X, 0.0f)
-                            val pvhY = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, 0.0f)
-                            Log.i("normalInSmallOut", "  smallItem.x:" + smallItem.x + "   smallItem.y" + smallItem.y)
+                            var pvhX: PropertyValuesHolder? = null
+                            var pvhY: PropertyValuesHolder? = null
+                            if (publishMenu.openSmallOrNormal) {
+                                pvhX = PropertyValuesHolder.ofFloat(View.TRANSLATION_X, (smallItem.x - publishMenu?.mCenterPoint?.x!!).toFloat())
+                                pvhY = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, (smallItem.y - publishMenu?.mCenterPoint?.y!!).toFloat())
+                            } else {
+                                pvhX = PropertyValuesHolder.ofFloat(View.TRANSLATION_X, 0.0f)
+                                pvhY = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, 0.0f)
+                            }
                             val pvhR = PropertyValuesHolder.ofFloat(View.ROTATION, 720.0f)
                             val pvhsX = PropertyValuesHolder.ofFloat(View.SCALE_X, 1.0f)
                             val pvhsY = PropertyValuesHolder.ofFloat(View.SCALE_Y, 1.0f)
@@ -117,8 +142,6 @@ class PublishMenuAnimationHandler {
                 }
             })
         }
-
-
     }
 
     abstract class CustomAnimatorListener : Animator.AnimatorListener {

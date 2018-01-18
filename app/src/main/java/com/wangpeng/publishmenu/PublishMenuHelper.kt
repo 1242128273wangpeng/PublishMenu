@@ -8,7 +8,6 @@ import android.view.animation.*
  */
 class PublishMenuHelper {
     companion object {
-        var smallOrBigState: Boolean = false
         var isRunning: Boolean = false
 
         /**
@@ -50,7 +49,6 @@ class PublishMenuHelper {
 
                 override fun onAnimationEnd(animation: Animation?) {
                     mAnimationListener.onAnimationEnd(animation)
-                    smallOrBigState = smallOrBig
                     isRunning = false
                 }
 
