@@ -32,6 +32,7 @@ class PublishMenuHelper {
         /**
          * @param view 执行动画缩放的控件
          * @param smallOrBig 变小(true) 变大(false)
+         * @param mAnimationListener 动画监听器
          */
         fun scaleCenter(view: View, smallOrBig: Boolean, mAnimationListener: AnimationListener) {
             var scaleAnimation: ScaleAnimation? = null
@@ -43,6 +44,41 @@ class PublishMenuHelper {
             scaleAnimation.fillAfter = true
             scaleAnimation.interpolator = DecelerateInterpolator()
             scaleAnimation.duration = 300
+            scaleAnimation.setAnimationListener(object : Animation.AnimationListener {
+                override fun onAnimationRepeat(animation: Animation?) {
+                }
+
+                override fun onAnimationEnd(animation: Animation?) {
+                    mAnimationListener.onAnimationEnd(animation)
+                    isRunning = false
+                }
+
+                override fun onAnimationStart(animation: Animation?) {
+                    isRunning = true
+                    mAnimationListener.onAnimationStart(animation)
+                }
+            })
+            if (!isRunning) {
+                view.startAnimation(scaleAnimation)
+            }
+        }
+
+        /**
+         * @param view 执行动画缩放的控件
+         * @param duration 执行动画的时间
+         * @param smallOrBig 变小(true) 变大(false)
+         * @param mAnimationListener 动画监听器
+         */
+        fun scaleCenter(view: View, smallOrBig: Boolean, duration: Long, mAnimationListener: AnimationListener) {
+            var scaleAnimation: ScaleAnimation? = null
+            if (smallOrBig) {
+                scaleAnimation = ScaleAnimation(1.0f, 0.6f, 1.0f, 0.6f, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f)
+            } else {
+                scaleAnimation = ScaleAnimation(0.6f, 1f, 0.6f, 1.0f, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f)
+            }
+            scaleAnimation.fillAfter = true
+            scaleAnimation.interpolator = DecelerateInterpolator()
+            scaleAnimation.duration = duration
             scaleAnimation.setAnimationListener(object : Animation.AnimationListener {
                 override fun onAnimationRepeat(animation: Animation?) {
                 }

@@ -124,7 +124,7 @@ class PublishWaveView @JvmOverloads constructor(
         fadeValueAnimators.setDuration(mDuration)
         fadeValueAnimators.repeatCount = ValueAnimator.INFINITE
         fadeValueAnimators.repeatMode = ValueAnimator.RESTART
-        fadeValueAnimators.interpolator = DecelerateInterpolator()
+        fadeValueAnimators.interpolator = DecelerateInterpolator()!!
         fadeValueAnimators.addUpdateListener(ValueAnimator.AnimatorUpdateListener { valueAnimator ->
             val v = valueAnimator.animatedValue as Float
             mCurrentWaveRadius = mDefaultWaveRadius * v + mBgRadius

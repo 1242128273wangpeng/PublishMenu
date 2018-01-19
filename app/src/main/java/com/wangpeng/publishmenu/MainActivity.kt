@@ -35,6 +35,7 @@ class MainActivity : AppCompatActivity(), PublishMenu.OnIconClickListener {
         publishMenu.normalDrawables = intArrayOf(R.drawable.fadan_heyibei, R.drawable.fadan_kandianying,
                 R.drawable.fadan_kge, R.drawable.fadan_shipinliaotian,
                 R.drawable.fadan_meishi, R.drawable.fadan_more)
+        publishMenu.normalTexts = arrayListOf("喝一杯", "看电影", "K歌", "视频聊天", "吃美食", "更多")
         publishMenu.mOnIconClickListener = this
         mAnimationHandler = PublishMenuAnimationHandler()
         mAnimationHandler.setPublishMenu(publishMenu)
@@ -56,7 +57,7 @@ class MainActivity : AppCompatActivity(), PublishMenu.OnIconClickListener {
                         }
 
                         override fun onAnimationEnd(animation: Animation?) {
-                            publishMenu.openSmallOrNormal = false
+                            publishMenu.openSmallOrNormal = !publishMenu.openSmallOrNormal
                         }
                     })
                 } else {
@@ -70,15 +71,34 @@ class MainActivity : AppCompatActivity(), PublishMenu.OnIconClickListener {
                         override fun onAnimationEnd(animation: Animation?) {
                             publish_wave.clearAnimation()
                             publish_wave.start()
-                            publishMenu.openSmallOrNormal = true
+                            publishMenu.openSmallOrNormal = !publishMenu.openSmallOrNormal
                         }
                     })
-
                 }
             }
         });
         PublishMenuHelper.setNormalStartEndAngle(publishMenu, -190.0f, 12.0f)
         PublishMenuHelper.setSmallStartEndAngle(publishMenu, -135.0f, 45.0f)
+        if (!publishMenu.openSmallOrNormal) {
+            PublishMenuHelper.scaleCenter(center_layout, true, 10, object : PublishMenuHelper.AnimationListener {
+                override fun onAnimationStart(animation: Animation?) {
+                    bg_img.setImageResource(R.drawable.fadan_guanbi)
+                    publish_wave.clearAnimation()
+                    publish_wave.stop()
+                    mAnimationHandler.smallInNormalOut()
+                }
+
+                override fun onAnimationEnd(animation: Animation?) {
+                    publishMenu.openSmallOrNormal = publishMenu.openSmallOrNormal
+                }
+            })
+            publishMenu.publishContiner?.postDelayed({
+                mAnimationHandler.turnIcon(publishMenu.context, false, object : PublishMenuAnimationHandler.TurnEndListener {
+                    override fun onTurnEnd() {
+                    }
+                })
+            }, 2000)
+        }
     }
 
     override fun onClick(view: View) {

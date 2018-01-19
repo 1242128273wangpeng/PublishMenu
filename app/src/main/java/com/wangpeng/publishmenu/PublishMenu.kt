@@ -15,6 +15,7 @@ import com.wangpeng.publishmenu.item.Item
 import com.wangpeng.publishmenu.item.PublishMenuNormalItem
 import com.wangpeng.publishmenu.item.PublishMenuSmallItem
 import com.wangpeng.publishmenu.utils.DensityUtil
+import de.hdodenhof.circleimageview.CircleImageView
 
 /**
  * Created by wangpeng on 2018/1/17.
@@ -44,6 +45,7 @@ class PublishMenu @JvmOverloads constructor(
     var mNormalRadius: Float
     var smallDrawables: IntArray = intArrayOf()
     var normalDrawables: IntArray = intArrayOf()
+    var normalTexts: MutableList<String> = arrayListOf()
     // 发布菜单默认是打开小的还是大的
     var openSmallOrNormal: Boolean = false
     var mOnIconClickListener: OnIconClickListener? = null
@@ -103,7 +105,6 @@ class PublishMenu @JvmOverloads constructor(
             var textHeight: Int = normalItem.nameText?.measuredHeight!!
             var txtFrameLayout: FrameLayout.LayoutParams = FrameLayout.LayoutParams(textWidth, textHeight, Gravity.TOP or Gravity.LEFT)
             if (normalNeedShow) {
-                txtFrameLayout.setMargins(normalItem.x - textWidth / 2, normalItem.y + normalItem.height / 2 - textHeight * 2 / 3, 0, 0)
                 frameLayout.setMargins(normalItem.x - normalItem.width / 2, normalItem.y - normalItem.height / 2, 0, 0)
                 normalItem.alpha = 1.0f
                 normalItem.iconImg?.alpha = 1.0f
@@ -111,14 +112,18 @@ class PublishMenu @JvmOverloads constructor(
             } else {
                 frameLayout.setMargins((mWidth.toInt() - normalItem.width) / 2, (mHeight.toInt() - normalItem.height) / 2, 0, 0)
             }
+            txtFrameLayout.setMargins(normalItem.x - textWidth / 2, normalItem.y + normalItem.height / 2 - textHeight * 2 / 3, 0, 0)
             if (normalItem.iconImg?.parent != null) {
                 var viewGroup: ViewGroup = normalItem.iconImg?.parent as ViewGroup
                 viewGroup.removeView(normalItem.iconImg)
             }
             if (i == 3) {  // 视频聊天的位置多添加一个ImageView
-                var bak: ImageView = ImageView(context)
-                bak.setImageResource(R.drawable.fadan_shipinliaotian)
-                addViewToCurrentContainer(bak, frameLayout)
+                var bak: CircleImageView = CircleImageView(context)
+                bak.setImageResource(R.mipmap.ic_launcher_round)
+                bak.setTag(-10)
+                var bakframeLayout: FrameLayout.LayoutParams = FrameLayout.LayoutParams(DensityUtil.dip2px(context, 47.0f), DensityUtil.dip2px(context, 47.0f))
+                bakframeLayout.setMargins(normalItem.x - bakframeLayout.width / 2, normalItem.y - bakframeLayout.height / 2, 0, 0)
+                addViewToCurrentContainer(bak, bakframeLayout)
             }
             addViewToCurrentContainer(normalItem.iconImg as View, frameLayout)
             addViewToCurrentContainer(normalItem.nameText as View, txtFrameLayout)
@@ -144,7 +149,7 @@ class PublishMenu @JvmOverloads constructor(
             item.iconImg?.setImageResource(normalDrawables!![normal_i])
             item.nameText = TextView(context)
             item.nameText?.alpha = 0.0f
-            item.nameText?.text = "啊啊啊"
+            item.nameText?.text = normalTexts.get(normal_i)
             item.nameText?.textSize = 13.0f
             normalItemList.add(item)
         }
