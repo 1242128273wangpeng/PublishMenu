@@ -119,7 +119,7 @@ class PublishMenu @JvmOverloads constructor(
             }
             if (i == 3) {  // 视频聊天的位置多添加一个ImageView
                 var bak: CircleImageView = CircleImageView(context)
-                bak.setImageResource(R.mipmap.ic_launcher_round)
+                bak.setImageResource(R.drawable.transparent)
                 bak.setTag(-10)
                 var bakframeLayout: FrameLayout.LayoutParams = FrameLayout.LayoutParams(DensityUtil.dip2px(context, 47.0f), DensityUtil.dip2px(context, 47.0f))
                 bakframeLayout.setMargins(normalItem.x - bakframeLayout.width / 2, normalItem.y - bakframeLayout.height / 2, 0, 0)

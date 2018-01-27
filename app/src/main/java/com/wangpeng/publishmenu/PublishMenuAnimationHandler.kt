@@ -20,7 +20,10 @@ import de.hdodenhof.circleimageview.CircleImageView
  */
 class PublishMenuAnimationHandler {
     var mIsOpen: Boolean = false
+    var mHasTurned: Boolean = false
     private lateinit var publishMenu: PublishMenu
+    private var mNormalOutRunnable: Runnable? = null
+    private var mNormalInRunnable: Runnable? = null
 
     fun setPublishMenu(publishMenu: PublishMenu) {
         this.publishMenu = publishMenu
@@ -28,13 +31,16 @@ class PublishMenuAnimationHandler {
     }
 
     fun smallInNormalOut() {
+        if (mNormalInRunnable != null) {
+            publishMenu.mHandler?.removeCallbacks(mNormalInRunnable)
+        }
         var bakIcon: ImageView? = getBakIcon()
         for (small_index in publishMenu.smallItemList.indices) {
             Log.i("smallInNormalOut", "small_index:" + small_index)
             var smallItem: PublishMenuSmallItem = publishMenu.smallItemList.get(small_index)
-            var flaot_x: Float = -(smallItem.x - publishMenu?.mCenterPoint?.x!!).toFloat()
+            var float_x: Float = -(smallItem.x - publishMenu?.mCenterPoint?.x!!).toFloat()
             var float_y: Float = -(smallItem.y - publishMenu?.mCenterPoint?.y!!).toFloat()
-            val pvhX = PropertyValuesHolder.ofFloat(View.TRANSLATION_X, flaot_x)
+            val pvhX = PropertyValuesHolder.ofFloat(View.TRANSLATION_X, float_x)
             val pvhY = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, float_y)
             Log.i("smallInNormalOut", "  smallItem.x:" + smallItem.x + "   smallItem.y" + smallItem.y)
             val pvhR = PropertyValuesHolder.ofFloat(View.ROTATION, -720.0f)
@@ -80,14 +86,16 @@ class PublishMenuAnimationHandler {
                                     normalItem.nameText?.animation = mAlpha
                                     normalItem.nameText?.startAnimation(mAlpha)
                                     if (normal_index == publishMenu.normalItemList.size - 1) {
-                                        Log.i("smallInNormalOut", "normalOut ${normal_index}")
-                                        publishMenu.publishContiner?.postDelayed({
-                                            turnIcon(publishMenu.context, false,object :TurnEndListener{
+                                        mNormalOutRunnable = Runnable {
+                                            bakIcon?.setImageResource(R.mipmap.ic_launcher_round)
+                                            turnIcon(publishMenu.context, false, object : TurnEndListener {
                                                 override fun onTurnEnd() {
-
+                                                    mHasTurned = true
                                                 }
                                             })
-                                        }, 2000)
+                                        }
+                                        Log.i("smallInNormalOut", "normalOut ${normal_index}")
+                                        publishMenu.publishContiner?.postDelayed(mNormalOutRunnable, 2000)
                                     }
                                 }
                             })
@@ -120,6 +128,9 @@ class PublishMenuAnimationHandler {
     }
 
     fun normalInSmallOut() {
+        if (mNormalOutRunnable != null) {
+            publishMenu.mHandler?.removeCallbacks(mNormalOutRunnable)
+        }
         var bakIcon: ImageView? = getBakIcon()
         for (normal_index in publishMenu.normalItemList.indices) {
             Log.i("normalInSmallOut", "normal_index:" + normal_index)
@@ -132,7 +143,7 @@ class PublishMenuAnimationHandler {
             val pvhA = PropertyValuesHolder.ofFloat(View.ALPHA, 0.0f)
             val animation = ObjectAnimator.ofPropertyValuesHolder(normalItem.iconImg, pvhX, pvhY, pvhR, pvhsX, pvhsY, pvhA)
             animation.duration = 300
-            animation.interpolator = AccelerateInterpolator(1.5f)!!
+            animation.interpolator = AccelerateInterpolator()
             animation.addListener(object : CustomAnimatorListener() {
                 override fun onAnimationStart(animation: Animator?) {
                     super.onAnimationStart(animation)
@@ -179,33 +190,38 @@ class PublishMenuAnimationHandler {
                     }
                 }
             })
-            publishMenu.publishContiner?.postDelayed({
-                turnIcon(publishMenu.context, false,object :TurnEndListener{
-                    override fun onTurnEnd() {
-                        animation.start()
-                        if (normal_index == 3 && bakIcon != null) {
-                            var bakpvhX: PropertyValuesHolder? = null
-                            var bakpvhY: PropertyValuesHolder? = null
-                            if (mIsOpen) {
-                                bakpvhX = PropertyValuesHolder.ofFloat(View.TRANSLATION_X, 0.0f)
-                                bakpvhY = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, 0.0f)
-                            } else {
-                                bakpvhX = PropertyValuesHolder.ofFloat(View.TRANSLATION_X, -(bakIcon.x - publishMenu?.mCenterPoint?.x!!).toFloat())
-                                bakpvhY = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, -(bakIcon.y - publishMenu?.mCenterPoint?.y!!).toFloat())
+            if (mHasTurned) {
+                publishMenu.publishContiner?.postDelayed({
+                    bakIcon?.setImageResource(R.mipmap.ic_launcher_round)
+                    turnIcon(publishMenu.context, true, object : TurnEndListener {
+                        override fun onTurnEnd() {
+                            mHasTurned = false
+                            if (normal_index == 3 && bakIcon != null) {
+                                var bakpvhX: PropertyValuesHolder? = null
+                                var bakpvhY: PropertyValuesHolder? = null
+                                if (mIsOpen) {
+                                    bakpvhX = PropertyValuesHolder.ofFloat(View.TRANSLATION_X, 0.0f)
+                                    bakpvhY = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, 0.0f)
+                                } else {
+                                    bakpvhX = PropertyValuesHolder.ofFloat(View.TRANSLATION_X, -(bakIcon.x - publishMenu?.mCenterPoint?.x!!).toFloat())
+                                    bakpvhY = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, -(bakIcon.y - publishMenu?.mCenterPoint?.y!!).toFloat())
+                                }
+                                val bakpvhR = PropertyValuesHolder.ofFloat(View.ROTATION, -720.0f)
+                                val bakpvhsX = PropertyValuesHolder.ofFloat(View.SCALE_X, 0.0f)
+                                val bakpvhsY = PropertyValuesHolder.ofFloat(View.SCALE_Y, 0.0f)
+                                val bakpvhA = PropertyValuesHolder.ofFloat(View.ALPHA, 0.0f)
+                                var bakanimation = ObjectAnimator.ofPropertyValuesHolder(bakIcon, bakpvhX, bakpvhY, bakpvhR, bakpvhsX, bakpvhsY, bakpvhA)
+                                bakanimation.duration = 300
+                                bakanimation.interpolator = OvershootInterpolator(1.5f)
+                                Log.i("smallInNormalOut", "bakIcon x: ${bakIcon?.x} y: ${bakIcon?.y}")
+                                bakanimation.start()
                             }
-                            val bakpvhR = PropertyValuesHolder.ofFloat(View.ROTATION, -720.0f)
-                            val bakpvhsX = PropertyValuesHolder.ofFloat(View.SCALE_X, 0.0f)
-                            val bakpvhsY = PropertyValuesHolder.ofFloat(View.SCALE_Y, 0.0f)
-                            val bakpvhA = PropertyValuesHolder.ofFloat(View.ALPHA, 0.0f)
-                            var bakanimation = ObjectAnimator.ofPropertyValuesHolder(bakIcon, bakpvhX, bakpvhY, bakpvhR, bakpvhsX, bakpvhsY, bakpvhA)
-                            bakanimation.duration = 300
-                            bakanimation.interpolator = OvershootInterpolator(1.5f)
-                            Log.i("smallInNormalOut", "bakIcon x: ${bakIcon?.x} y: ${bakIcon?.y}")
-                            bakanimation.start()
                         }
-                    }
-                })
-            }, 2000)
+                    })
+                }, 100)
+            }else{
+                animation.start()
+            }
         }
     }
 
